@@ -40,22 +40,28 @@ app.post("/repositories", (request, response) => {
 
 //Alterar repositorio
 app.put("/repositories/:id", (request, response) => {
-  const { title, url, techs } = request.body;
   const { id } = request.params;
+  const { title, url, techs } = request.body;
 
-  const repositoryIndex = repositories.findIndex( repository => repository.id === id);
+  const repositoryIndex = repositories.findIndex( repository => 
+    repository.id === id
+  );
 
-  if ( repositoryIndex < 0 ) {
+  if ( repositoryIndex === -1 ) {
     return response.status(400).send({
-      Error: 'Repository not found! :-('
-    });
+      error: 'Repository does not exists.'
+    }); 
   }
-
-  const repository = repositories[repositoryIndex];
   
-  repository.title = title;
-  repository.url = url;
-  repository.techs = techs;
+  const repository = {
+    id,
+    title,
+    url,
+    techs,
+    likes: repositories[repositoryIndex].likes,
+  };
+
+  repositories[repositoryIndex] = repository;
 
   return response.json(repository);
 });
@@ -66,14 +72,14 @@ app.delete("/repositories/:id", (request, response) => {
 
   const repositoryIndex = repositories.findIndex( repository => repository.id === id);
 
-  if ( repositoryIndex < 0 ) {
+  if ( repositoryIndex >= 0 ) {
+    repositories.splice(repositoryIndex,1);
+  } else {
     return response.status(400).send({
-      Error: 'Repository not found! :-('
+      error: 'Repository does not exists.'
     });
   }
-
-  repositories.splice(repositoryIndex,1);
-
+  
   return response.status(204).send();
 
 });
@@ -84,17 +90,15 @@ app.post("/repositories/:id/like", (request, response) => {
 
   const repositoryIndex = repositories.findIndex( repository => repository.id === id);
 
-  if ( repositoryIndex < 0 ) {
+  if ( repositoryIndex === -1 ) {
     return response.status(400).send({
-      Error: 'Repository not found! :-('
+      error: 'RRepository does not exists.'
     });
   }
 
-  const repository = repositories[repositoryIndex];
+  repositories[repositoryIndex].likes ++;
 
-  repository.likes++;
-
-  return response.json(repository);
+  return response.json(repositories[repositoryIndex]);
 
 });
 
