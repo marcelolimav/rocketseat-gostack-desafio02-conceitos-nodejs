@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-const { uuid } = require("uuidv4");
+const { uuid, isUuid}  = require("uuidv4");
 
 const app = express();
 
@@ -9,6 +9,26 @@ app.use(express.json());
 app.use(cors());
 
 const repositories = [];
+
+function ValidationRepositoryID(request, response, next){
+  const { id } = request.params;
+  if(!isUuid(id)){
+    return response.status(400).json({ error: 'Invalid repository ID.'})
+  }
+
+  const repositoryIndex = repositories.findIndex( repository => 
+    repository.id === id
+  );
+
+  if ( repositoryIndex === -1 ) {
+    return response.status(400).send({ error: 'Repository does not exists.' }); 
+  }
+
+  request._idIndex = repositoryIndex;
+  request._idRepository = id;
+  
+  return next();
+}
 
 // Buscar repositórios
 app.get("/repositories", (request, response) => {
@@ -39,66 +59,36 @@ app.post("/repositories", (request, response) => {
 });
 
 //Alterar repositorio
-app.put("/repositories/:id", (request, response) => {
-  const { id } = request.params;
-  const { title, url, techs } = request.body;
+app.put("/repositories/:id", ValidationRepositoryID, (request, response) => {
+  const {  title, url, techs } = request.body;
 
-  const repositoryIndex = repositories.findIndex( repository => 
-    repository.id === id
-  );
-
-  if ( repositoryIndex === -1 ) {
-    return response.status(400).send({
-      error: 'Repository does not exists.'
-    }); 
-  }
-  
   const repository = {
-    id,
+    id: request._idRepository,
     title,
     url,
     techs,
-    likes: repositories[repositoryIndex].likes,
+    likes: repositories[request._idIndex].likes,
   };
 
-  repositories[repositoryIndex] = repository;
+  repositories[request._idIndex] = repository;
 
   return response.json(repository);
 });
 
 // Apagar repositorio
-app.delete("/repositories/:id", (request, response) => {
-  const { id } = request.params;
+app.delete("/repositories/:id", ValidationRepositoryID, (request, response) => {
 
-  const repositoryIndex = repositories.findIndex( repository => repository.id === id);
-
-  if ( repositoryIndex >= 0 ) {
-    repositories.splice(repositoryIndex,1);
-  } else {
-    return response.status(400).send({
-      error: 'Repository does not exists.'
-    });
-  }
-  
+  repositories.splice(request._idIndex,1);
   return response.status(204).send();
 
 });
 
 //Dar um like
-app.post("/repositories/:id/like", (request, response) => {
-  const { id } = request.params;
+app.post("/repositories/:id/like", ValidationRepositoryID, (request, response) => {
 
-  const repositoryIndex = repositories.findIndex( repository => repository.id === id);
+  repositories[request._idIndex].likes ++;
 
-  if ( repositoryIndex === -1 ) {
-    return response.status(400).send({
-      error: 'RRepository does not exists.'
-    });
-  }
-
-  repositories[repositoryIndex].likes ++;
-
-  return response.json(repositories[repositoryIndex]);
+  return response.json(repositories[request._idIndex]);
 
 });
 
