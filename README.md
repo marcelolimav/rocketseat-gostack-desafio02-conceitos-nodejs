@@ -12,3 +12,7 @@ Aplicados no [Desafio 02](https://github.com/rocketseat-education/bootcamp-gosta
 As seguintes ferramentas foram usadas na construção do projeto.
  
 - [Node.js](https://nodejs.org/en/)
+
+## :memo: Licença
+
+Esse projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
